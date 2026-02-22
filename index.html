@@ -1501,24 +1501,59 @@
                     setInterval(playKeepAlive, 30000);
                 } catch (e) {}
 
-                // Method 3: Simulate user activity — move a hidden element to prevent idle detection
+                // Method 3: Echo Show keep-alive — dispatch synthetic touch/mouse events + focus tricks
                 try {
-                    const dot = document.createElement('div');
-                    dot.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;';
-                    document.body.appendChild(dot);
-                    setInterval(() => {
-                        dot.style.top = (Math.random() * 2) + 'px';
-                        // Trigger a tiny scroll to simulate activity
+                    const keepAlive = () => {
+                        // Simulate touch event
+                        try {
+                            const touch = new TouchEvent('touchstart', {
+                                bubbles: true, cancelable: true,
+                                touches: [new Touch({ identifier: 0, target: document.body, clientX: 1, clientY: 1 })]
+                            });
+                            document.body.dispatchEvent(touch);
+                        } catch (e) {}
+                        // Simulate mouse move
+                        try {
+                            document.body.dispatchEvent(new MouseEvent('mousemove', { clientX: Math.random() * 10, clientY: Math.random() * 10 }));
+                        } catch (e) {}
+                        // Simulate click on hidden element
+                        try {
+                            const btn = document.createElement('button');
+                            btn.style.cssText = 'position:fixed;top:-10px;left:-10px;width:1px;height:1px;opacity:0;pointer-events:none;';
+                            document.body.appendChild(btn);
+                            btn.click();
+                            btn.focus();
+                            document.body.removeChild(btn);
+                        } catch (e) {}
+                        // Force window focus
+                        window.focus();
+                        // Trigger scroll
                         window.scrollTo(0, 0);
-                        // Re-request wake lock if lost
+                        // Re-request wake lock
                         if ('wakeLock' in navigator && (!this.wakeLock || this.wakeLock.released)) {
                             navigator.wakeLock.request('screen').then(wl => this.wakeLock = wl).catch(() => {});
                         }
-                    }, 60000);
+                    };
+                    // Run every 30 seconds
+                    setInterval(keepAlive, 30000);
+                    keepAlive();
                 } catch (e) {}
 
-                // Method 4: Full page reload every 4 hours to stay fresh and re-engage keep-alive
+                // Method 4: Full page reload every 4 hours to stay fresh
                 setTimeout(() => { location.reload(); }, 4 * 60 * 60 * 1000);
+
+                // Method 5: Audio context keep-alive (prevents Silk from going idle)
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    gain.gain.value = 0.001; // inaudible
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    // Resume audio context periodically (browsers suspend it)
+                    setInterval(() => { if (ctx.state === 'suspended') ctx.resume().catch(() => {}); }, 30000);
+                } catch (e) {}
             }
 
             startAutoRefresh() {
