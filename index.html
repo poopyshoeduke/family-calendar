@@ -487,6 +487,194 @@
             .weather-bar .wb-details { display: none; }
             .weather-bar .wb-city { display: none; }
         }
+
+        /* Hide mobile-only elements on desktop/tablet */
+        .mobile-nav { display: none; }
+        .event-detail-popup { display: none; }
+        .event-detail-popup-overlay { display: none; }
+
+        /* ── IPHONE / NARROW PORTRAIT SCREENS ── */
+        @media (max-width: 480px) {
+            .mobile-nav { display: flex; }
+            .event-detail-popup { display: block; }
+            .event-detail-popup-overlay { display: none; } /* shown via .visible class */
+
+            html, body { overflow: auto; overflow-x: hidden; }
+            .app {
+                padding: 8px 8px 80px; gap: 8px; height: auto; min-height: 100vh; min-height: 100dvh;
+                overflow: visible;
+            }
+
+            /* Header: compact single row */
+            .header {
+                padding: 10px 12px; min-height: auto; flex-wrap: nowrap; gap: 6px;
+                border-radius: 12px; position: sticky; top: 0; z-index: 100;
+                background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            }
+            .header-left { gap: 8px; flex: 1; min-width: 0; }
+            .header-date { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .header-year { font-size: 0.7rem; }
+            .nav-btn { width: 34px; height: 34px; font-size: 1rem; flex-shrink: 0; }
+            .today-btn { padding: 5px 12px; font-size: 0.72rem; }
+            .view-toggle { display: none; } /* Replaced by bottom nav */
+            .header-right { gap: 8px; }
+            .header-right .clock { font-size: 0.85rem; min-width: auto; }
+            .header-right .icon-btn { font-size: 1.2rem; padding: 4px; }
+            .header-right #calCountArea { display: none; }
+
+            /* Weather bar: compact */
+            .weather-bar {
+                padding: 8px 12px; gap: 10px; border-radius: 10px;
+                flex-wrap: wrap;
+            }
+            .weather-bar .wb-icon { font-size: 1.6rem; }
+            .weather-bar .wb-temp { font-size: 1.4rem; }
+            .weather-bar .wb-desc { font-size: 0.75rem; }
+            .weather-bar .wb-hilo { font-size: 0.75rem; }
+            .weather-bar .wb-forecast { display: flex !important; width: 100%; margin-left: 0; padding: 4px 0 0; }
+            .weather-bar .wb-details { display: flex !important; font-size: 0.7rem; gap: 10px; }
+            .weather-bar .wb-city { display: none; }
+
+            /* Weather alerts */
+            .wx-alert { padding: 8px 10px; font-size: 0.78rem; }
+            .wx-alert .alert-icon { font-size: 1.1rem; }
+
+            /* Countdown bar */
+            .countdown-bar { padding: 8px 12px; font-size: 0.8rem; border-radius: 10px; }
+
+            /* Week grid: responsive columns */
+            .week-grid {
+                flex: none; min-height: auto;
+            }
+            .week-grid:not(.view-day):not(.view-month) {
+                grid-template-columns: repeat(7, 1fr); gap: 4px;
+            }
+            .week-grid.view-day { grid-template-columns: 1fr; }
+            .week-grid.view-month { gap: 2px; }
+
+            /* Day columns in week view: compact */
+            .day-column { border-radius: 10px; }
+            .day-header { padding: 6px 4px 4px; }
+            .day-name { font-size: 0.55rem; letter-spacing: 0.05em; margin-bottom: 1px; }
+            .day-number { font-size: 1.1rem; }
+
+            /* Day view: full width, scrollable */
+            .view-day .day-column { border-radius: 12px; }
+            .view-day .day-header { padding: 12px 16px; gap: 10px; }
+            .view-day .day-name { font-size: 0.9rem; }
+            .view-day .day-number { font-size: 2rem; }
+            .view-day .day-events { overflow-y: visible; }
+            .view-day .day-events-timed { min-height: 600px; }
+            .view-day .event-card { font-size: 0.82rem; padding: 8px 10px; left: 50px; right: 8px; }
+            .view-day .hour-label { font-size: 0.62rem; left: 4px; width: 38px; }
+            .view-day .hour-marker { left: 46px; }
+            .view-day .event-time-label { font-size: 0.72rem; }
+            .view-day .event-title { font-size: 0.82rem; }
+            .view-day .now-line { left: 42px; }
+            .view-day .now-dot { left: 36px; }
+
+            /* Event cards: larger touch targets */
+            .event-card {
+                min-height: 18px; padding: 2px 3px; font-size: 0.52rem;
+                -webkit-tap-highlight-color: transparent;
+                cursor: pointer;
+            }
+            .event-card:active { transform: scale(0.97); opacity: 0.9; }
+            .event-time-label { font-size: 0.42rem; }
+            .event-title { font-size: 0.52rem; }
+
+            /* Month view: bigger cells */
+            .month-cell { border-radius: 4px; }
+            .month-cell-header { font-size: 0.65rem; padding: 3px 4px 1px; }
+            .month-event { font-size: 0.45rem; padding: 1px 2px; }
+            .month-header-cell { font-size: 0.55rem; }
+            .month-more { font-size: 0.42rem; }
+
+            /* Bottom navigation bar */
+            .mobile-nav {
+                position: fixed; bottom: 0; left: 0; right: 0;
+                display: flex; align-items: center; justify-content: space-around;
+                background: var(--bg-card); border-top: 1px solid var(--border);
+                padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+                z-index: 200;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+            }
+            .mobile-nav-btn {
+                display: flex; flex-direction: column; align-items: center; gap: 2px;
+                background: none; border: none; color: var(--text-secondary);
+                font-size: 0.62rem; font-weight: 600; font-family: inherit;
+                padding: 4px 12px; border-radius: 8px; cursor: pointer;
+                transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+            }
+            .mobile-nav-btn .nav-icon { font-size: 1.3rem; line-height: 1; }
+            .mobile-nav-btn.active {
+                color: var(--today-bg); background: var(--today-glow);
+            }
+            .mobile-nav-btn:active { transform: scale(0.93); }
+
+            /* Event detail popup (tap to expand) */
+            .event-detail-popup {
+                position: fixed; bottom: 0; left: 0; right: 0;
+                background: var(--bg-card); border-radius: 16px 16px 0 0;
+                box-shadow: 0 -4px 30px rgba(0,0,0,0.2);
+                padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+                z-index: 300;
+                transform: translateY(100%);
+                transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            .event-detail-popup.visible { transform: translateY(0); }
+            .event-detail-popup .popup-handle {
+                width: 36px; height: 4px; background: var(--border);
+                border-radius: 2px; margin: 0 auto 16px;
+            }
+            .event-detail-popup .popup-color-bar {
+                height: 4px; border-radius: 2px; margin-bottom: 12px;
+            }
+            .event-detail-popup .popup-title {
+                font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 4px;
+            }
+            .event-detail-popup .popup-cal {
+                font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;
+            }
+            .event-detail-popup .popup-row {
+                display: flex; align-items: center; gap: 8px;
+                font-size: 0.85rem; color: var(--text); padding: 6px 0;
+            }
+            .event-detail-popup .popup-row-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+            .event-detail-popup .popup-dismiss {
+                margin-top: 16px; width: 100%; padding: 12px;
+                background: var(--hover); border: none; border-radius: 10px;
+                font-size: 0.9rem; font-weight: 600; color: var(--text);
+                font-family: inherit; cursor: pointer;
+            }
+            .event-detail-popup-overlay {
+                position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+                z-index: 299; display: none;
+            }
+            .event-detail-popup-overlay.visible { display: block; }
+
+            /* Settings panel: full screen on phone */
+            .panel { width: 100%; max-width: 100%; border-radius: 0; max-height: 100vh; max-height: 100dvh; }
+            .panel-header { padding: 16px; }
+            .panel-body { padding: 16px; }
+            .panel-footer { padding: 12px 16px; flex-wrap: wrap; }
+            .panel-footer .save-btn { flex: 1; min-width: 120px; text-align: center; }
+            .settings-row { flex-direction: column; align-items: stretch; gap: 4px; }
+            .settings-row label { min-width: auto; font-size: 0.82rem; }
+            .settings-row input[type="number"] { width: 100%; }
+
+            /* PIN screen: adjust for phone */
+            .pin-box { padding: 32px 24px; }
+            .pin-input { font-size: 1.2rem; padding: 12px; }
+
+            /* Setup banner */
+            .setup-banner h2 { font-size: 1.2rem; }
+            .setup-banner p { font-size: 0.85rem; }
+            .setup-banner .emoji { font-size: 2.4rem; }
+
+            /* Status bar above bottom nav */
+            .status-bar { bottom: 70px; }
+        }
         @media (max-height: 600px) {
             .day-header { padding: 6px 8px 4px; }
             .day-number { font-size: 1.5rem; }
@@ -746,6 +934,37 @@
                 <button class="banner-btn" onclick="CAL.openSettings()">Get Started</button>
             </div>
         </div>
+
+        <!-- Mobile bottom nav (hidden on desktop via CSS) -->
+        <nav class="mobile-nav" id="mobileNav">
+            <button class="mobile-nav-btn" data-view="day" onclick="CAL.setViewMode('day')">
+                <span class="nav-icon">&#128197;</span>Day
+            </button>
+            <button class="mobile-nav-btn active" data-view="week" onclick="CAL.setViewMode('week')">
+                <span class="nav-icon">&#128198;</span>Week
+            </button>
+            <button class="mobile-nav-btn" data-view="month" onclick="CAL.setViewMode('month')">
+                <span class="nav-icon">&#128467;&#65039;</span>Month
+            </button>
+            <button class="mobile-nav-btn" onclick="CAL.goToday()">
+                <span class="nav-icon">&#9898;</span>Today
+            </button>
+            <button class="mobile-nav-btn" onclick="CAL.openSettings()">
+                <span class="nav-icon">&#9881;&#65039;</span>Settings
+            </button>
+        </nav>
+
+        <!-- Event detail popup (phone only) -->
+        <div class="event-detail-popup-overlay" id="eventPopupOverlay"></div>
+        <div class="event-detail-popup" id="eventPopup">
+            <div class="popup-handle"></div>
+            <div class="popup-color-bar" id="popupColorBar"></div>
+            <div class="popup-title" id="popupTitle"></div>
+            <div class="popup-cal" id="popupCal"></div>
+            <div class="popup-row" id="popupTime"><span class="popup-row-icon">&#128336;</span><span id="popupTimeText"></span></div>
+            <div class="popup-row" id="popupLocation" style="display:none;"><span class="popup-row-icon">&#128205;</span><span id="popupLocText"></span></div>
+            <button class="popup-dismiss" onclick="CAL.closeEventPopup()">Done</button>
+        </div>
     </div>
 
     <!-- SETTINGS -->
@@ -884,12 +1103,17 @@
             (url) => `https://api.cors.lol/?url=${encodeURIComponent(url)}`,
         ];
 
+        const _isMobile = () => window.innerWidth <= 480;
+
         class FamilyCalendar {
             constructor() {
                 this.config = this.loadConfig();
                 this.events = [];
                 this.allUpcoming = [];
-                this.viewMode = this.config.viewMode || 'week'; // 'day' | 'week' | 'month'
+                // Default to day view on phones (if no saved preference)
+                const savedConfig = localStorage.getItem('familyCalV4');
+                const defaultView = (_isMobile() && !savedConfig) ? 'day' : (this.config.viewMode || 'week');
+                this.viewMode = defaultView;
                 this.currentDate = new Date(); // used for day view
                 this.currentWeekStart = this.getWeekStart(new Date());
                 this.currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -1795,6 +2019,10 @@
                         card.style.setProperty('--event-color', ev.calColor);
                         card.style.background = ev.calColor;
                         card.innerHTML = `<div class="event-title">${this.escHtml(ev.title)}</div>`;
+                        // Mobile tap handler
+                        if (_isMobile()) {
+                            card.addEventListener('click', () => this.showEventPopup(ev));
+                        }
                         allDayBox.appendChild(card);
                     });
 
@@ -1830,6 +2058,14 @@
                             card.style.right = 'auto';
                         }
 
+                        // Mobile: adjust overlap positioning
+                        if (_isMobile() && isDayV && item.totalCols > 1) {
+                            const colFrac = item.col / item.totalCols;
+                            const widthFrac = 1 / item.totalCols;
+                            card.style.left = `calc(50px + (100% - 58px) * ${colFrac})`;
+                            card.style.width = `calc((100% - 58px) * ${widthFrac} - 2px)`;
+                        }
+
                         // Show more detail in day view: time range + location
                         if (isDayV) {
                             const timeRange = `${this.formatTime(s)} – ${this.formatTime(e)}`;
@@ -1838,6 +2074,10 @@
                             card.innerHTML = `<div class="event-time-label">${timeRange}</div><div class="event-title">${this.escHtml(ev.title)}</div>${locHtml}${calHtml}`;
                         } else {
                             card.innerHTML = `<div class="event-time-label">${this.formatTime(s)}</div><div class="event-title">${this.escHtml(ev.title)}</div>`;
+                        }
+                        // Mobile tap handler
+                        if (_isMobile()) {
+                            card.addEventListener('click', () => this.showEventPopup(ev));
                         }
                         timedBox.appendChild(card);
                     });
@@ -1861,6 +2101,9 @@
                         el.style.color = ev.calColor;
                         const timeStr = ev.allDay ? '' : this.formatTime(new Date(ev.start)) + ' ';
                         el.innerHTML = `<span class="month-event-dot" style="background:${ev.calColor}"></span>${timeStr}${this.escHtml(ev.title)}`;
+                        if (_isMobile()) {
+                            el.addEventListener('click', () => this.showEventPopup(ev));
+                        }
                         container.appendChild(el);
                     });
                     if (evs.length > maxShow) {
@@ -2061,6 +2304,10 @@
 
             updateViewToggle() {
                 document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.view === this.viewMode);
+                });
+                // Sync mobile bottom nav
+                document.querySelectorAll('.mobile-nav-btn[data-view]').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.view === this.viewMode);
                 });
             }
@@ -2361,6 +2608,47 @@
             esc(str) {
                 if (!str) return '';
                 return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;');
+            }
+
+            /* ── Mobile Event Popup ── */
+            showEventPopup(ev) {
+                const s = new Date(ev.start);
+                const e = ev.end ? new Date(ev.end) : null;
+
+                document.getElementById('popupColorBar').style.background = ev.calColor || 'var(--today-bg)';
+                document.getElementById('popupTitle').textContent = ev.title || 'Event';
+                document.getElementById('popupCal').textContent = ev.calName || '';
+
+                let timeText;
+                if (ev.allDay) {
+                    timeText = 'All day';
+                } else {
+                    timeText = this.formatTime(s);
+                    if (e) timeText += ' – ' + this.formatTime(e);
+                }
+                // Add date
+                const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                const dateStr = `${dayNames[s.getDay()]}, ${MONTHS[s.getMonth()]} ${s.getDate()}`;
+                document.getElementById('popupTimeText').textContent = `${dateStr} · ${timeText}`;
+
+                const locRow = document.getElementById('popupLocation');
+                if (ev.location) {
+                    document.getElementById('popupLocText').textContent = ev.location;
+                    locRow.style.display = 'flex';
+                } else {
+                    locRow.style.display = 'none';
+                }
+
+                document.getElementById('eventPopup').classList.add('visible');
+                document.getElementById('eventPopupOverlay').classList.add('visible');
+
+                // Dismiss on overlay tap
+                document.getElementById('eventPopupOverlay').onclick = () => this.closeEventPopup();
+            }
+
+            closeEventPopup() {
+                document.getElementById('eventPopup').classList.remove('visible');
+                document.getElementById('eventPopupOverlay').classList.remove('visible');
             }
         }
 
