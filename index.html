@@ -608,6 +608,14 @@
                         // If no calendars configured, use defaults
                         if (!saved.calendars || !saved.calendars.length) {
                             saved.calendars = this.defaults().calendars;
+                        } else {
+                            // Merge in any new default calendars not already present
+                            const existingIds = new Set(saved.calendars.map(c => c.id));
+                            for (const def of this.defaults().calendars) {
+                                if (!existingIds.has(def.id)) {
+                                    saved.calendars.push(def);
+                                }
+                            }
                         }
                         return saved;
                     }
