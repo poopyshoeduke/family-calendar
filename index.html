@@ -714,6 +714,15 @@
         function wxIcon(code, isDay) { return (isDay ? WX_ICONS_DAY : WX_ICONS_NIGHT)[code] || '\uD83C\uDF21\uFE0F'; }
         function wxDesc(code, isDay) { return (isDay ? WX_DESCS_DAY : WX_DESCS_NIGHT)[code] || ''; }
 
+        // Simple deobfuscation for calendar data (prevents bots/scrapers from finding private URLs)
+        const _K = 'familycal2026';
+        function _d(encoded) {
+            const bytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
+            let result = '';
+            for (let i = 0; i < bytes.length; i++) result += String.fromCharCode(bytes[i] ^ _K.charCodeAt(i % _K.length));
+            return result;
+        }
+
         // CORS proxies to try in order (the iCal URL itself is public but blocked by CORS in browsers)
         const CORS_PROXIES = [
             (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
@@ -769,12 +778,12 @@
             defaults() {
                 return {
                     calendars: [
-                        { id: 'lukeschreiner27@gmail.com', name: 'Luke', color: '#3B82F6', enabled: true },
-                        { id: 'hkschreiner@gmail.com', name: 'HK', color: '#EC4899', enabled: true },
-                        { id: 'willschreiner1000@gmail.com', name: 'Will', color: '#8B5CF6', enabled: true, icalUrl: 'https://calendar.google.com/calendar/ical/willschreiner1000%40gmail.com/private-0a62d20a56f5ada00b6b220f93d61842/basic.ics' },
-                        { id: 'willschreinerjr@gmail.com', name: 'Will Jr', color: '#10B981', enabled: true },
-                        { id: 'nfl_-m-03b3j_Green+Bay+Packers#sports@group.v.calendar.google.com', name: 'Packers 🏈', color: '#F59E0B', enabled: true },
-                        { id: 'nba_-m-0jmbv_Milwaukee+Bucks#sports@group.v.calendar.google.com', name: 'Bucks 🦌', color: '#06B6D4', enabled: true }
+                        { id: _d('ChQGDB8aCxMJW15XRFRWLQ4BGAoNQlFfXw=='), name: 'Luke', color: '#3B82F6', enabled: true },
+                        { id: _d('DgoeCgQLBggCV0JyUQsABAVCGgwM'), name: 'HK', color: '#EC4899', enabled: true },
+                        { id: _d('EQgBBR8aCxMJW15XRFdRXVksHg4ABV4eUVkL'), name: 'Will', color: '#8B5CF6', enabled: true, icalUrl: _d('DhUZGR9DTE4PU1xXWAIAH0cLFgwGAFceUVkLTg4IABwNBQ1AH1tVBw1CHgUVDxIPWkJXXwgEH1hcSVNEWAJXX1cPDUMKAxRMER5bRlNCA0xdCFpLB1NcUwUEUFMACQhcSQFXDgACAlBfUglfXUFXU0NQUUFfBU8ECh8=') },
+                        { id: _d('EQgBBR8aCxMJW15XRAwTLQ4BGAoNQlFfXw=='), name: 'Will Jr', color: '#10B981', enabled: true },
+                        { id: _d('CAcBNkEUTlFfUANYaSETCAwCUiEAFRlgU1UNBB8aTwoTDh5GQ3JRFA4YGUIPTQINXlVcUgcTQw4DFgQNCRxTXVs='), name: 'Packers \uD83C\uDFC8', color: '#F59E0B', enabled: true },
+                        { id: _d('CAMMNkEUTlEGX1JEaSsIAR4NDAgECRlyR1UNEk4aHBYRFR9yV0BZExFDH0IaAg0JXFRTREgGAgYLFQZPD11d'), name: 'Bucks \uD83E\uDD8C', color: '#06B6D4', enabled: true }
                     ],
                     weatherCity: 'Milwaukee',
                     weatherCoords: null,
