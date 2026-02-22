@@ -675,6 +675,7 @@
                 this.renderCalCount();
                 this.setupTouchSwipe();
                 setInterval(() => this.updateClock(), 15000);
+                setInterval(() => this.autoTheme(), 60000); // check sunrise/sunset every minute
                 this.fetchWeather();
                 this.fetchAlerts();
                 this.startAutoRefresh();
@@ -1360,6 +1361,13 @@
 
                     document.getElementById('weatherBar').style.display = 'flex';
 
+                    // Auto light/dark mode based on sunrise/sunset
+                    if (wd.daily && wd.daily.sunrise && wd.daily.sunset) {
+                        this.sunriseTime = new Date(wd.daily.sunrise[0]);
+                        this.sunsetTime = new Date(wd.daily.sunset[0]);
+                        this.autoTheme();
+                    }
+
                     // Highlight bar border for severe current weather
                     const bar = document.getElementById('weatherBar');
                     bar.classList.remove('wx-severe', 'wx-extreme');
@@ -1433,6 +1441,18 @@
                 document.getElementById('themeBtn').innerHTML = this.config.theme === 'dark' ? '&#9728;&#65039;' : '&#127769;';
             }
             toggleTheme() { this.config.theme = this.config.theme === 'dark' ? 'light' : 'dark'; this.saveConfig(); this.applyTheme(); }
+
+            autoTheme() {
+                if (!this.sunriseTime || !this.sunsetTime) return;
+                const now = new Date();
+                const shouldBeLight = now >= this.sunriseTime && now < this.sunsetTime;
+                const newTheme = shouldBeLight ? 'light' : 'dark';
+                if (this.config.theme !== newTheme) {
+                    this.config.theme = newTheme;
+                    this.saveConfig();
+                    this.applyTheme();
+                }
+            }
 
             toggleFullscreen() {
                 if (!document.fullscreenElement && !document.webkitFullscreenElement) {
