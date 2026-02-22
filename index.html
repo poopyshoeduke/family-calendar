@@ -714,9 +714,8 @@
 
         // CORS proxies to try in order (the iCal URL itself is public but blocked by CORS in browsers)
         const CORS_PROXIES = [
-            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
             (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+            (url) => `https://api.cors.lol/?url=${encodeURIComponent(url)}`,
         ];
 
         class FamilyCalendar {
@@ -1102,7 +1101,7 @@
                 for (const proxyFn of CORS_PROXIES) {
                     try {
                         const proxyUrl = proxyFn(url);
-                        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+                        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
                         if (res.ok) {
                             const text = await res.text();
                             if (text.includes('BEGIN:VCALENDAR')) return text;
