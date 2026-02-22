@@ -248,6 +248,7 @@
         .month-header-row {
             display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
             margin-bottom: 4px;
+            grid-column: 1 / -1; /* span all parent grid columns */
         }
         .month-header-cell {
             text-align: center; font-size: 0.65rem; font-weight: 700;
@@ -542,21 +543,50 @@
             /* Countdown bar */
             .countdown-bar { padding: 8px 12px; font-size: 0.8rem; border-radius: 10px; }
 
-            /* Week grid: responsive columns */
+            /* Week grid */
             .week-grid {
                 flex: none; min-height: auto;
             }
+            /* Week view: horizontal scroll with wider columns */
             .week-grid:not(.view-day):not(.view-month) {
-                grid-template-columns: repeat(7, 1fr); gap: 4px;
+                display: flex;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x mandatory;
+                gap: 6px;
+                padding-bottom: 4px;
             }
-            .week-grid.view-day { grid-template-columns: 1fr; }
-            .week-grid.view-month { gap: 2px; }
+            .week-grid:not(.view-day):not(.view-month) .day-column {
+                min-width: 130px;
+                flex: 0 0 auto;
+                scroll-snap-align: start;
+            }
+            /* Hide hour labels/markers in week view on mobile (too cramped) */
+            .week-grid:not(.view-day):not(.view-month) .hour-label,
+            .week-grid:not(.view-day):not(.view-month) .hour-marker {
+                display: none;
+            }
+            .week-grid:not(.view-day):not(.view-month) .day-events-timed {
+                min-height: 300px;
+            }
+            /* Bigger event cards in week view */
+            .week-grid:not(.view-day):not(.view-month) .event-card {
+                font-size: 0.68rem; padding: 3px 5px;
+            }
+            .week-grid:not(.view-day):not(.view-month) .event-time-label {
+                font-size: 0.58rem;
+            }
+            .week-grid:not(.view-day):not(.view-month) .event-title {
+                font-size: 0.68rem;
+            }
+            .week-grid.view-day { display: grid; grid-template-columns: 1fr; }
+            .week-grid.view-month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 
-            /* Day columns in week view: compact */
+            /* Day columns: compact but readable */
             .day-column { border-radius: 10px; }
-            .day-header { padding: 6px 4px 4px; }
-            .day-name { font-size: 0.55rem; letter-spacing: 0.05em; margin-bottom: 1px; }
-            .day-number { font-size: 1.1rem; }
+            .day-header { padding: 8px 6px 6px; }
+            .day-name { font-size: 0.65rem; letter-spacing: 0.05em; margin-bottom: 1px; }
+            .day-number { font-size: 1.2rem; }
 
             /* Day view: full width, scrollable */
             .view-day .day-column { border-radius: 12px; }
@@ -573,22 +603,23 @@
             .view-day .now-line { left: 42px; }
             .view-day .now-dot { left: 36px; }
 
-            /* Event cards: larger touch targets */
+            /* Event cards: touch-friendly */
             .event-card {
-                min-height: 18px; padding: 2px 3px; font-size: 0.52rem;
+                min-height: 20px; padding: 3px 5px; font-size: 0.65rem;
                 -webkit-tap-highlight-color: transparent;
                 cursor: pointer;
             }
             .event-card:active { transform: scale(0.97); opacity: 0.9; }
-            .event-time-label { font-size: 0.42rem; }
-            .event-title { font-size: 0.52rem; }
+            .event-time-label { font-size: 0.55rem; }
+            .event-title { font-size: 0.65rem; }
 
-            /* Month view: bigger cells */
-            .month-cell { border-radius: 4px; }
-            .month-cell-header { font-size: 0.65rem; padding: 3px 4px 1px; }
-            .month-event { font-size: 0.45rem; padding: 1px 2px; }
-            .month-header-cell { font-size: 0.55rem; }
-            .month-more { font-size: 0.42rem; }
+            /* Month view: readable cells */
+            .month-header-row { margin-bottom: 2px; }
+            .month-cell { border-radius: 4px; min-height: 52px; }
+            .month-cell-header { font-size: 0.72rem; padding: 4px 5px 2px; }
+            .month-event { font-size: 0.52rem; padding: 1px 3px; }
+            .month-header-cell { font-size: 0.6rem; padding: 4px 0; }
+            .month-more { font-size: 0.45rem; }
 
             /* Bottom navigation bar */
             .mobile-nav {
