@@ -166,8 +166,27 @@
         .countdown-bar .event-name { font-weight: 700; color: var(--text); }
         .countdown-bar .event-time { color: var(--today-bg); font-weight: 700; margin-left: auto; white-space: nowrap; }
 
+        /* ── VIEW MODE TOGGLE ── */
+        .view-toggle {
+            display: flex; gap: 4px; background: var(--hover); border-radius: 10px; padding: 3px;
+        }
+        .view-toggle-btn {
+            background: none; border: none; color: var(--text-secondary); font-size: 0.75rem;
+            font-weight: 600; padding: 5px 14px; border-radius: 8px; cursor: pointer;
+            font-family: inherit; transition: all 0.2s; line-height: 1;
+        }
+        .view-toggle-btn.active {
+            background: var(--today-bg); color: white; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .view-toggle-btn:hover:not(.active) { background: var(--border-light); color: var(--text); }
+        [data-theme="dark"] .view-toggle-btn:hover:not(.active) { background: var(--border); }
+
         /* ── WEEK GRID ── */
         .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; flex: 1; min-height: 0; }
+        .week-grid.view-day { grid-template-columns: 1fr; }
+        .week-grid.view-month {
+            grid-template-columns: repeat(7, 1fr); gap: 4px;
+        }
         .day-column {
             background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow);
             display: flex; flex-direction: column; overflow: hidden; transition: box-shadow 0.3s, opacity 0.3s;
@@ -180,6 +199,64 @@
         .day-header { padding: 10px 10px 8px; text-align: center; border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
         .day-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 2px; }
         .day-number { font-size: 1.8rem; font-weight: 800; line-height: 1.1; color: var(--text); }
+
+        /* ── DAY VIEW ── */
+        .view-day .day-column {
+            border-radius: var(--radius);
+        }
+        .view-day .day-header {
+            padding: 12px 20px; display: flex; align-items: center; justify-content: center; gap: 16px;
+        }
+        .view-day .day-name { font-size: 1rem; margin-bottom: 0; }
+        .view-day .day-number { font-size: 2.4rem; }
+        .view-day .event-card { font-size: 0.9rem; padding: 6px 12px; left: 40px; right: 12px; border-left-width: 4px; }
+        .view-day .event-time-label { font-size: 0.78rem; }
+        .view-day .event-card.all-day { font-size: 0.9rem; padding: 8px 12px; }
+        .view-day .hour-label { font-size: 0.65rem; left: 8px; }
+        .view-day .hour-marker { left: 36px; }
+
+        /* ── MONTH VIEW ── */
+        .month-header-row {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+            margin-bottom: 4px;
+        }
+        .month-header-cell {
+            text-align: center; font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary);
+            padding: 6px 0;
+        }
+        .month-cell {
+            background: var(--bg-card); border-radius: var(--radius-xs); box-shadow: var(--shadow);
+            display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+            transition: box-shadow 0.3s, opacity 0.3s;
+        }
+        .month-cell.today { box-shadow: 0 0 0 2px var(--today-bg), var(--shadow); }
+        .month-cell.other-month { opacity: 0.35; }
+        .month-cell.past { opacity: 0.5; }
+        .month-cell-header {
+            padding: 4px 6px 2px; font-size: 0.75rem; font-weight: 700;
+            color: var(--text); text-align: right;
+        }
+        .month-cell.today .month-cell-header {
+            color: var(--today-bg);
+        }
+        .month-cell-events {
+            flex: 1; overflow: hidden; padding: 1px 3px 3px; display: flex;
+            flex-direction: column; gap: 1px;
+        }
+        .month-event {
+            font-size: 0.55rem; font-weight: 600; padding: 1px 4px;
+            border-radius: 3px; overflow: hidden; white-space: nowrap;
+            text-overflow: ellipsis; line-height: 1.3; flex-shrink: 0;
+        }
+        .month-event-dot {
+            display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+            margin-right: 2px; vertical-align: middle;
+        }
+        .month-more {
+            font-size: 0.5rem; color: var(--text-muted); font-weight: 600;
+            padding: 0 4px; flex-shrink: 0;
+        }
         .day-events {
             flex: 1; position: relative; padding: 0; overflow: hidden;
         }
@@ -411,6 +488,10 @@
             .countdown-bar { font-size: 0.95rem; padding: 10px 20px; }
             .hour-label { font-size: 0.58rem; }
             .wx-alert { font-size: 0.92rem; padding: 10px 20px; }
+            .month-cell-header { font-size: 0.88rem; padding: 6px 8px 2px; }
+            .month-event { font-size: 0.62rem; }
+            .month-header-cell { font-size: 0.75rem; }
+            .view-toggle-btn { font-size: 0.82rem; padding: 6px 16px; }
         }
         @media (min-width: 1600px) {
             html { font-size: 24px; }
@@ -429,13 +510,18 @@
     <div class="app" id="app">
         <header class="header">
             <div class="header-left">
-                <button class="nav-btn" onclick="CAL.prevWeek()" title="Previous Week">&#9664;</button>
+                <button class="nav-btn" onclick="CAL.prev()" title="Previous" id="navPrev">&#9664;</button>
                 <div>
                     <div class="header-date" id="headerDate">Loading...</div>
                     <div class="header-year" id="headerYear"></div>
                 </div>
-                <button class="nav-btn" onclick="CAL.nextWeek()" title="Next Week">&#9654;</button>
+                <button class="nav-btn" onclick="CAL.next()" title="Next" id="navNext">&#9654;</button>
                 <button class="today-btn" onclick="CAL.goToday()">Today</button>
+                <div class="view-toggle" id="viewToggle">
+                    <button class="view-toggle-btn" data-view="day" onclick="CAL.setViewMode('day')">Day</button>
+                    <button class="view-toggle-btn active" data-view="week" onclick="CAL.setViewMode('week')">Week</button>
+                    <button class="view-toggle-btn" data-view="month" onclick="CAL.setViewMode('month')">Month</button>
+                </div>
             </div>
             <div class="header-right">
                 <div class="clock" id="clock"></div>
@@ -541,6 +627,14 @@
                         <input class="input" type="number" id="inputRefreshInterval" min="1" max="60" value="5">
                     </div>
                     <div class="settings-row">
+                        <label>Default view:</label>
+                        <select class="input" id="inputViewMode">
+                            <option value="day">Day</option>
+                            <option value="week">Week</option>
+                            <option value="month">Month</option>
+                        </select>
+                    </div>
+                    <div class="settings-row">
                         <label>Week starts on:</label>
                         <select class="input" id="inputWeekStart">
                             <option value="0">Sunday</option>
@@ -598,7 +692,10 @@
                 this.config = this.loadConfig();
                 this.events = [];
                 this.allUpcoming = [];
+                this.viewMode = this.config.viewMode || 'week'; // 'day' | 'week' | 'month'
+                this.currentDate = new Date(); // used for day view
                 this.currentWeekStart = this.getWeekStart(new Date());
+                this.currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
                 this.refreshTimer = null;
                 this.wakeLock = null;
                 this.touchStartX = 0;
@@ -644,6 +741,7 @@
                     theme: 'light',
                     refreshInterval: 5,
                     weekStartDay: 0,
+                    viewMode: 'week',
                 };
             }
 
@@ -687,7 +785,8 @@
             /* ── Init ── */
             init() {
                 this.applyTheme();
-                this.renderWeek();
+                this.updateViewToggle();
+                this.renderView();
                 this.updateClock();
                 this.renderCalCount();
                 this.setupTouchSwipe();
@@ -983,6 +1082,36 @@
                 return null;
             }
 
+            /* ── Date Range for Current View ── */
+            getDateRange() {
+                if (this.viewMode === 'day') {
+                    const start = new Date(this.currentDate);
+                    start.setHours(0, 0, 0, 0);
+                    const end = new Date(start);
+                    end.setDate(end.getDate() + 1);
+                    return { start, end };
+                } else if (this.viewMode === 'month') {
+                    const year = this.currentMonth.getFullYear();
+                    const month = this.currentMonth.getMonth();
+                    const firstOfMonth = new Date(year, month, 1);
+                    const startDay = this.config.weekStartDay || 0;
+                    const dayOfWeek = (firstOfMonth.getDay() - startDay + 7) % 7;
+                    const start = new Date(firstOfMonth);
+                    start.setDate(start.getDate() - dayOfWeek);
+                    const lastOfMonth = new Date(year, month + 1, 0);
+                    const totalDays = dayOfWeek + lastOfMonth.getDate();
+                    const weeks = Math.ceil(totalDays / 7);
+                    const end = new Date(start);
+                    end.setDate(end.getDate() + weeks * 7);
+                    return { start, end };
+                } else {
+                    const start = new Date(this.currentWeekStart);
+                    const end = new Date(start);
+                    end.setDate(end.getDate() + 7);
+                    return { start, end };
+                }
+            }
+
             /* ── Fetch All Calendars ── */
             async fetchAllCalendars() {
                 const enabled = this.config.calendars.filter(c => c.enabled);
@@ -990,8 +1119,7 @@
 
                 this.showStatus('Loading calendars...');
 
-                const weekEnd = new Date(this.currentWeekStart);
-                weekEnd.setDate(weekEnd.getDate() + 7);
+                const { start: rangeStart, end: rangeEnd } = this.getDateRange();
                 const allEvents = [];
 
                 const fetches = enabled.map(async (cal) => {
@@ -1018,7 +1146,7 @@
                     }
 
                     const rawEvents = this.parseICS(icsText, cal.name, cal.color);
-                    const expanded = this.expandRecurring(rawEvents, this.currentWeekStart, weekEnd);
+                    const expanded = this.expandRecurring(rawEvents, rangeStart, rangeEnd);
                     allEvents.push(...expanded);
 
                     this.renderCalendarList();
@@ -1183,6 +1311,45 @@
                 area.innerHTML = n > 0 ? `<span class="cal-count-badge">${n} cal${n > 1 ? 's' : ''}</span>` : '';
             }
 
+            /* ── Render Day ── */
+            renderDay() {
+                const day = new Date(this.currentDate);
+                const today = new Date();
+                const grid = document.getElementById('weekGrid');
+                const banner = document.getElementById('setupBanner');
+
+                const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                document.getElementById('headerDate').textContent = `${dayNames[day.getDay()]}, ${MONTHS[day.getMonth()]} ${day.getDate()}`;
+                document.getElementById('headerYear').textContent = day.getFullYear();
+
+                grid.innerHTML = '';
+                grid.className = 'week-grid view-day';
+                grid.style.position = 'relative';
+
+                const isToday = this.isSameDay(day, today);
+                const isPast = day < today && !isToday;
+                const col = document.createElement('div');
+                col.className = 'day-column fade-in' + (isToday ? ' today' : '') + (isPast ? ' past' : '');
+                col.innerHTML = `
+                    <div class="day-header">
+                        <div class="day-name">${dayNames[day.getDay()]}</div>
+                        <div class="day-number">${day.getDate()}</div>
+                    </div>
+                    <div class="day-events" data-date="${day.toISOString().split('T')[0]}">
+                        <div class="day-events-allday"></div>
+                        <div class="day-events-timed"></div>
+                    </div>
+                `;
+                grid.appendChild(col);
+
+                if (!this.isConfigured()) {
+                    grid.appendChild(banner);
+                    banner.classList.remove('hidden');
+                } else if (banner) {
+                    banner.classList.add('hidden');
+                }
+            }
+
             /* ── Render Week ── */
             renderWeek() {
                 const days = this.getWeekDays();
@@ -1201,6 +1368,9 @@
                 document.getElementById('headerYear').textContent = f.getFullYear();
 
                 grid.innerHTML = '';
+                grid.className = 'week-grid';
+                grid.style.position = 'relative';
+
                 days.forEach((day, i) => {
                     const isToday = this.isSameDay(day, today);
                     const isPast = day < today && !isToday;
@@ -1219,6 +1389,75 @@
                     `;
                     grid.appendChild(col);
                 });
+
+                if (!this.isConfigured()) {
+                    grid.appendChild(banner);
+                    banner.classList.remove('hidden');
+                } else if (banner) {
+                    banner.classList.add('hidden');
+                }
+            }
+
+            /* ── Render Month ── */
+            renderMonth() {
+                const today = new Date();
+                const grid = document.getElementById('weekGrid');
+                const banner = document.getElementById('setupBanner');
+                const year = this.currentMonth.getFullYear();
+                const month = this.currentMonth.getMonth();
+
+                document.getElementById('headerDate').textContent = MONTHS[month];
+                document.getElementById('headerYear').textContent = year;
+
+                grid.innerHTML = '';
+                grid.className = 'week-grid view-month';
+                grid.style.position = 'relative';
+
+                // Day-of-week header row
+                const headerRow = document.createElement('div');
+                headerRow.className = 'month-header-row';
+                const startDay = this.config.weekStartDay || 0;
+                for (let i = 0; i < 7; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'month-header-cell';
+                    cell.textContent = DAYS_SHORT[(startDay + i) % 7];
+                    headerRow.appendChild(cell);
+                }
+                grid.appendChild(headerRow);
+
+                // Calculate first day of grid
+                const firstOfMonth = new Date(year, month, 1);
+                const dayOfWeek = (firstOfMonth.getDay() - startDay + 7) % 7;
+                const gridStart = new Date(firstOfMonth);
+                gridStart.setDate(gridStart.getDate() - dayOfWeek);
+
+                // Calculate weeks needed (always show 5 or 6 rows)
+                const lastOfMonth = new Date(year, month + 1, 0);
+                const totalDays = dayOfWeek + lastOfMonth.getDate();
+                const weeks = Math.ceil(totalDays / 7);
+
+                for (let w = 0; w < weeks; w++) {
+                    for (let d = 0; d < 7; d++) {
+                        const date = new Date(gridStart);
+                        date.setDate(date.getDate() + (w * 7) + d);
+                        const isToday = this.isSameDay(date, today);
+                        const isCurrentMonth = date.getMonth() === month;
+                        const isPast = date < today && !isToday;
+
+                        const cell = document.createElement('div');
+                        cell.className = 'month-cell fade-in'
+                            + (isToday ? ' today' : '')
+                            + (!isCurrentMonth ? ' other-month' : '')
+                            + (isPast ? ' past' : '');
+                        cell.style.animationDelay = `${(w * 7 + d) * 0.01}s`;
+                        const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                        cell.innerHTML = `
+                            <div class="month-cell-header">${date.getDate()}</div>
+                            <div class="month-cell-events" data-month-date="${dateStr}"></div>
+                        `;
+                        grid.appendChild(cell);
+                    }
+                }
 
                 if (!this.isConfigured()) {
                     grid.appendChild(banner);
@@ -1308,6 +1547,34 @@
                         card.innerHTML = `<div class="event-time-label">${this.formatTime(s)}</div><div class="event-title">${this.escHtml(ev.title)}</div>`;
                         timedBox.appendChild(card);
                     });
+                });
+
+                // Month view events
+                document.querySelectorAll('[data-month-date]').forEach(container => {
+                    const date = container.dataset.monthDate;
+                    const evs = byDate[date] || [];
+                    container.innerHTML = '';
+                    const maxShow = 3;
+                    const sorted = evs.sort((a, b) => {
+                        if (a.allDay && !b.allDay) return -1;
+                        if (!a.allDay && b.allDay) return 1;
+                        return new Date(a.start) - new Date(b.start);
+                    });
+                    sorted.slice(0, maxShow).forEach(ev => {
+                        const el = document.createElement('div');
+                        el.className = 'month-event';
+                        el.style.background = `color-mix(in srgb, ${ev.calColor} 18%, var(--bg-card))`;
+                        el.style.color = ev.calColor;
+                        const timeStr = ev.allDay ? '' : this.formatTime(new Date(ev.start)) + ' ';
+                        el.innerHTML = `<span class="month-event-dot" style="background:${ev.calColor}"></span>${timeStr}${this.escHtml(ev.title)}`;
+                        container.appendChild(el);
+                    });
+                    if (evs.length > maxShow) {
+                        const more = document.createElement('div');
+                        more.className = 'month-more';
+                        more.textContent = `+${evs.length - maxShow} more`;
+                        container.appendChild(more);
+                    }
                 });
             }
 
@@ -1481,9 +1748,67 @@
             }
 
             /* ── Navigation ── */
-            prevWeek() { this.currentWeekStart.setDate(this.currentWeekStart.getDate() - 7); this.renderWeek(); this.events = []; this.renderEvents(); this.fetchAllCalendars(); }
-            nextWeek() { this.currentWeekStart.setDate(this.currentWeekStart.getDate() + 7); this.renderWeek(); this.events = []; this.renderEvents(); this.fetchAllCalendars(); }
-            goToday() { this.currentWeekStart = this.getWeekStart(new Date()); this.renderWeek(); this.events = []; this.renderEvents(); this.fetchAllCalendars(); }
+            /* ── View Mode ── */
+            setViewMode(mode) {
+                this.viewMode = mode;
+                this.config.viewMode = mode;
+                this.saveConfig();
+                this.updateViewToggle();
+                // Sync dates
+                const now = new Date();
+                if (mode === 'day') this.currentDate = new Date(now);
+                if (mode === 'week') this.currentWeekStart = this.getWeekStart(now);
+                if (mode === 'month') this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                this.renderView();
+                this.events = [];
+                this.renderEvents();
+                this.fetchAllCalendars();
+            }
+
+            updateViewToggle() {
+                document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.view === this.viewMode);
+                });
+            }
+
+            renderView() {
+                if (this.viewMode === 'day') this.renderDay();
+                else if (this.viewMode === 'month') this.renderMonth();
+                else this.renderWeek();
+            }
+
+            prev() {
+                if (this.viewMode === 'day') {
+                    this.currentDate.setDate(this.currentDate.getDate() - 1);
+                } else if (this.viewMode === 'month') {
+                    this.currentMonth.setMonth(this.currentMonth.getMonth() - 1);
+                } else {
+                    this.currentWeekStart.setDate(this.currentWeekStart.getDate() - 7);
+                }
+                this.renderView(); this.events = []; this.renderEvents(); this.fetchAllCalendars();
+            }
+
+            next() {
+                if (this.viewMode === 'day') {
+                    this.currentDate.setDate(this.currentDate.getDate() + 1);
+                } else if (this.viewMode === 'month') {
+                    this.currentMonth.setMonth(this.currentMonth.getMonth() + 1);
+                } else {
+                    this.currentWeekStart.setDate(this.currentWeekStart.getDate() + 7);
+                }
+                this.renderView(); this.events = []; this.renderEvents(); this.fetchAllCalendars();
+            }
+
+            goToday() {
+                const now = new Date();
+                this.currentDate = new Date(now);
+                this.currentWeekStart = this.getWeekStart(now);
+                this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                this.renderView(); this.events = []; this.renderEvents(); this.fetchAllCalendars();
+            }
+
+            prevWeek() { this.prev(); }
+            nextWeek() { this.next(); }
 
             applyTheme() {
                 document.documentElement.setAttribute('data-theme', this.config.theme);
@@ -1532,7 +1857,7 @@
                 grid.addEventListener('touchstart', e => { this.touchStartX = e.changedTouches[0].screenX; }, { passive: true });
                 grid.addEventListener('touchend', e => {
                     const d = e.changedTouches[0].screenX - this.touchStartX;
-                    if (Math.abs(d) > 80) d > 0 ? this.prevWeek() : this.nextWeek();
+                    if (Math.abs(d) > 80) d > 0 ? this.prev() : this.next();
                 }, { passive: true });
             }
 
@@ -1640,6 +1965,7 @@
                 document.getElementById('inputWeatherCity').value = this.config.weatherCity || 'Milwaukee';
                 document.getElementById('inputRefreshInterval').value = this.config.refreshInterval || 5;
                 document.getElementById('inputWeekStart').value = this.config.weekStartDay || 0;
+                document.getElementById('inputViewMode').value = this.config.viewMode || 'week';
                 this.renderCalendarList();
                 document.getElementById('settingsOverlay').classList.add('active');
             }
@@ -1658,12 +1984,21 @@
                 }
                 this.config.refreshInterval = parseInt(document.getElementById('inputRefreshInterval').value) || 5;
                 this.config.weekStartDay = parseInt(document.getElementById('inputWeekStart').value) || 0;
+                const newView = document.getElementById('inputViewMode').value;
+                if (newView !== this.viewMode) {
+                    this.viewMode = newView;
+                    this.config.viewMode = newView;
+                    this.updateViewToggle();
+                }
 
                 this.saveConfig();
                 this.closeSettings();
 
-                this.currentWeekStart = this.getWeekStart(new Date());
-                this.renderWeek();
+                const now = new Date();
+                this.currentDate = new Date(now);
+                this.currentWeekStart = this.getWeekStart(now);
+                this.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                this.renderView();
                 this.renderCalCount();
 
                 if (this.isConfigured()) {
