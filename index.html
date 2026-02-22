@@ -497,28 +497,34 @@
 
                 <section class="section">
                     <h3>&#128197; Your Calendars</h3>
-                    <p>Paste a Google Calendar embed URL, public iCal link, or just the email address. Each calendar must be set to <strong>public</strong> in Google Calendar settings.</p>
+                    <p>Paste a Google Calendar URL, email address, or <strong>secret iCal link</strong> (private calendars work too!).</p>
 
                     <div class="cal-list" id="calList"></div>
 
                     <div class="add-cal-row">
-                        <input class="input" type="text" id="inputAddCal" placeholder="Paste calendar URL or email (e.g. name@gmail.com)" autocomplete="off" spellcheck="false">
+                        <input class="input" type="text" id="inputAddCal" placeholder="Email, share link, or secret iCal URL" autocomplete="off" spellcheck="false">
                         <button class="add-cal-btn" onclick="CAL.addCalendarFromInput()">+ Add</button>
                     </div>
                     <p class="hint" style="margin-top:8px;">
                         Example:<br>
-                        &#8226; <code>https://calendar.google.com/calendar/embed?src=name@gmail.com&amp;ctz=...</code><br>
-                        &#8226; <code>schreinerfamilycalendar@gmail.com</code><br>
-                        &#8226; Sports: search "Interesting calendars" in Google Calendar to subscribe, then add the email here
+                        &#8226; <code>name@gmail.com</code> (public calendars)<br>
+                        &#8226; <code>https://calendar.google.com/calendar/ical/.../private-.../basic.ics</code> (private!)<br>
+                        &#8226; <code>https://calendar.google.com/calendar/u/0?cid=...</code> (share link)
                     </p>
 
                     <div class="steps-box" style="margin-top:12px;">
+                        <strong>&#128274; Private calendar (no need to make public!):</strong>
                         <ol>
                             <li>In Google Calendar, click the &#8942; next to a calendar &#8594; <strong>"Settings and sharing"</strong></li>
-                            <li>Under <strong>"Access permissions"</strong> &#8594; check <strong>"Make available to public"</strong></li>
-                            <li>Scroll to <strong>"Integrate calendar"</strong> &#8594; copy the <strong>"Calendar ID"</strong> (email) or the <strong>"Public URL"</strong></li>
+                            <li>Scroll to <strong>"Integrate calendar"</strong></li>
+                            <li>Copy the <strong>"Secret address in iCal format"</strong></li>
                             <li>Paste it above and click <strong>+ Add</strong></li>
-                            <li>Sports calendars and holidays are already public &#8212; just add them!</li>
+                        </ol>
+                        <strong>&#127760; Public calendar:</strong>
+                        <ol>
+                            <li>Under <strong>"Access permissions"</strong> &#8594; check <strong>"Make available to public"</strong></li>
+                            <li>Then just paste the calendar email (e.g. <code>name@gmail.com</code>)</li>
+                            <li>Sports calendars and holidays are already public!</li>
                         </ol>
                     </div>
                 </section>
@@ -703,6 +709,15 @@
                 input = input.trim();
                 if (!input) return null;
 
+                // Detect private/secret iCal URL (contains /private-xxx/ or non-public path)
+                try {
+                    const privateMatch = input.match(/\/calendar\/ical\/([^/]+)\/([^/]+)\/basic\.ics/);
+                    if (privateMatch && privateMatch[2] !== 'public') {
+                        // Return special object with both id and full private URL
+                        return { id: decodeURIComponent(privateMatch[1]), privateUrl: input };
+                    }
+                } catch (e) {}
+
                 // From embed URL: ?src=xxx
                 try {
                     if (input.includes('calendar.google.com') || input.includes('?src=')) {
@@ -712,10 +727,22 @@
                     }
                 } catch (e) {}
 
-                // From iCal URL: /calendar/ical/xxx/
+                // From iCal URL (public): /calendar/ical/xxx/public/
                 try {
                     const m = input.match(/\/calendar\/ical\/([^/]+)\//);
                     if (m) return decodeURIComponent(m[1]);
+                } catch (e) {}
+
+                // From share URL: ?cid=base64
+                try {
+                    if (input.includes('?cid=')) {
+                        const url = new URL(input);
+                        const cid = url.searchParams.get('cid');
+                        if (cid) {
+                            const decoded = atob(cid);
+                            if (decoded.includes('@')) return decoded;
+                        }
+                    }
                 } catch (e) {}
 
                 // Direct email / calendar ID
@@ -729,7 +756,9 @@
                 return input;
             }
 
-            getICalUrl(calId) {
+            getICalUrl(calId, cal) {
+                // Use stored private URL if available
+                if (cal && cal.icalUrl) return cal.icalUrl;
                 return `https://calendar.google.com/calendar/ical/${encodeURIComponent(calId)}/public/basic.ics`;
             }
 
@@ -969,7 +998,7 @@
                     this.calStatuses[cal.id] = 'loading';
                     this.renderCalendarList();
 
-                    const icalUrl = this.getICalUrl(cal.id);
+                    const icalUrl = this.getICalUrl(cal.id, cal);
                     const icsText = await this.fetchICalWithProxy(icalUrl);
 
                     if (!icsText) {
@@ -1027,7 +1056,7 @@
                 const allUpcoming = [];
 
                 for (const cal of enabled) {
-                    const icalUrl = this.getICalUrl(cal.id);
+                    const icalUrl = this.getICalUrl(cal.id, cal);
                     const icsText = await this.fetchICalWithProxy(icalUrl);
                     if (!icsText) continue;
                     const rawEvents = this.parseICS(icsText, cal.name, cal.color);
@@ -1050,11 +1079,15 @@
                     return;
                 }
 
-                const calId = this.parseCalendarInput(raw);
-                if (!calId) {
+                const parsed = this.parseCalendarInput(raw);
+                if (!parsed) {
                     this.showStatus('Could not parse that \u2014 try the full URL or email');
                     return;
                 }
+
+                // parsed can be a string (cal ID) or an object { id, privateUrl }
+                const calId = typeof parsed === 'object' ? parsed.id : parsed;
+                const privateUrl = typeof parsed === 'object' ? parsed.privateUrl : null;
 
                 if (this.config.calendars.some(c => c.id === calId)) {
                     this.showStatus('Already added!');
@@ -1064,7 +1097,9 @@
 
                 const name = this.guessCalendarName(calId);
                 const color = PALETTE[this.config.calendars.length % PALETTE.length];
-                this.config.calendars.push({ id: calId, name, color, enabled: true });
+                const entry = { id: calId, name, color, enabled: true };
+                if (privateUrl) entry.icalUrl = privateUrl;
+                this.config.calendars.push(entry);
                 this.saveConfig();
                 inp.value = '';
 
@@ -1107,8 +1142,10 @@
                     const status = this.calStatuses[cal.id];
                     let statusHtml = '';
                     if (status === 'ok') statusHtml = '<span class="cal-item-status ok">\u2713 Connected</span>';
-                    else if (status === 'err') statusHtml = '<span class="cal-item-status err">\u2717 Not public?</span>';
+                    else if (status === 'err') statusHtml = `<span class="cal-item-status err">\u2717 ${cal.icalUrl ? 'Failed' : 'Not public?'}</span>`;
                     else if (status === 'loading') statusHtml = '<span class="cal-item-status loading">Loading...</span>';
+
+                    const privBadge = cal.icalUrl ? '<span class="cal-item-badge" title="Private (secret URL)">&#128274;</span>' : '';
 
                     const item = document.createElement('div');
                     item.className = 'cal-item';
@@ -1119,6 +1156,7 @@
                             <div class="cal-item-name">${this.escHtml(cal.name)}</div>
                             <div class="cal-item-desc">${this.escHtml(cal.id)}</div>
                         </div>
+                        ${privBadge}
                         ${badge ? `<span class="cal-item-badge">${badge}</span>` : ''}
                         ${statusHtml}
                         <button class="remove-cal-btn" onclick="CAL.removeCalendar(${idx})" title="Remove">\u2715</button>
