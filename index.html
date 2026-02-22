@@ -538,10 +538,96 @@
         @media (min-width: 2000px) {
             html { font-size: 28px; }
         }
+
+        /* ── PIN Entry Screen ── */
+        .pin-overlay {
+            position: fixed; inset: 0; z-index: 99999;
+            background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.3s;
+        }
+        .pin-overlay.hidden { display: none; }
+        .pin-box {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 40px 48px;
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+        }
+        .pin-box h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 8px;
+            color: var(--text);
+        }
+        .pin-box p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0 0 24px;
+        }
+        .pin-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 1.4rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.3em;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .pin-input:focus { border-color: var(--today-bg); }
+        .pin-input.error { border-color: #EF4444; animation: shake 0.4s; }
+        .pin-submit {
+            margin-top: 16px;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            border: none;
+            border-radius: 10px;
+            background: var(--today-bg);
+            color: #fff;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .pin-submit:hover { opacity: 0.85; }
+        .pin-error-msg {
+            color: #EF4444;
+            font-size: 0.8rem;
+            margin-top: 12px;
+            min-height: 1.2em;
+        }
+        .pin-emoji { font-size: 3rem; margin-bottom: 12px; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%,60% { transform: translateX(-8px); }
+            40%,80% { transform: translateX(8px); }
+        }
     </style>
 </head>
 <body>
-    <div class="app" id="app">
+    <!-- PIN Entry Screen -->
+    <div class="pin-overlay" id="pinOverlay">
+        <div class="pin-box">
+            <div class="pin-emoji">&#128274;</div>
+            <h2>Family Calendar</h2>
+            <p>Enter your PIN to unlock</p>
+            <input type="password" class="pin-input" id="pinInput" maxlength="20" placeholder="••••" autofocus>
+            <button class="pin-submit" id="pinSubmit" onclick="window._tryPin()">Unlock</button>
+            <div class="pin-error-msg" id="pinError"></div>
+        </div>
+    </div>
+
+    <div class="app" id="app" style="display:none;">
         <header class="header">
             <div class="header-left">
                 <button class="nav-btn" onclick="CAL.prev()" title="Previous" id="navPrev">&#9664;</button>
@@ -714,14 +800,27 @@
         function wxIcon(code, isDay) { return (isDay ? WX_ICONS_DAY : WX_ICONS_NIGHT)[code] || '\uD83C\uDF21\uFE0F'; }
         function wxDesc(code, isDay) { return (isDay ? WX_DESCS_DAY : WX_DESCS_NIGHT)[code] || ''; }
 
-        // Simple deobfuscation for calendar data (prevents bots/scrapers from finding private URLs)
-        const _K = 'familycal2026';
-        function _d(encoded) {
-            const bytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
-            let result = '';
-            for (let i = 0; i < bytes.length; i++) result += String.fromCharCode(bytes[i] ^ _K.charCodeAt(i % _K.length));
-            return result;
+        // AES-256-GCM encrypted calendar data — decrypted at runtime with user's PIN (never stored in source)
+        const ENCRYPTED_CAL_DATA = '2pJs9qdnIxdDWiuKS3jMHyH92qflbdAY7r9hDFO9RexLpLE9c44pNvf0h/eJYvqrJd65raJY/Kz5Ot8eHW30F/uNRFpmVV5Olc/J/4s4Kv3ReTwKK8cR4sOJwZ/bk6Kdijr2Z88kmTa/gLXjP3LYVbvmSraZSv53y+3A4s2JsO1B9JsTxNxhJngOBh0OEyIinr9sPLOv3EDFqj77/V55IeYM/PnbRYBg09lyS8FwThQ1etVxktUS2PchQDmR390ZeSJMEpHuHGLjTWNBwpIMutKsiFskBG3iqf96JYa4u4ky9RT8ZvOiXV3GiMRQpIsN7MOsR6eCpRgkfOFZl/dlPnTxRMlSx3JZ15Q7j9zDNrKkPFh2mZ7yJPfvZHAybu4OImNfZo/SeTBpU55nNfjngu2Ig7fu+c6t53wD4fGvP5HEaE4eG/TmgbU5NLs1HgYRzv9DbROM/nX93ur+esbhROfohiLWxUeSgyvnHmX4p2mk7BzkF1onYsjeYzsYFVJiNcpdhd7soGLnt2KYSSROtyGOHnEnH0+wgEGktwNzscIb7LiYadtoeyB5wB/Azd66qEQ0QqoUM1eSp+Jc0zW5SGseNMY9mwUix1XosxXCkaR/JMRtti0UvSg7L/ZAzny1fl2eG+U94ha2gDCLinH0LPbQAIscnkjBFI0noJTfEwyMJCOsUOQvADzTqUCESdtC9gsMVe4XyzpLdP+7THJoWp7aUJHv5aT0Hscf5VKaIDL0yVdL8Esjaos3Kirgkc9xNTHsw6d2+qtxFLHJJ5en+IsqU9O6c+itfBGfzK+1lL71EABxkYJh8A9YJxOOwCNATN1/oGC5DjYfUXghlO6J8SHPyfOHVBlIs7eTHvl6BRrtk0RavLpzb/Lr8doRU79Fq7NBVi0z5xduQDXcRB2oIOXQO5sjk83T5CpVW/mjyFIcDLUmeS3nTmFKhXnXbDWL8vnE2yccw8VVJ/sKt6F91MIlL1rviiCQKCKe';
+
+        // Decrypt AES-256-GCM using Web Crypto API
+        async function _decryptCalData(pin) {
+            const enc = new TextEncoder();
+            const keyHash = await crypto.subtle.digest('SHA-256', enc.encode(pin));
+            const key = await crypto.subtle.importKey('raw', keyHash, 'AES-GCM', false, ['decrypt']);
+            const combined = Uint8Array.from(atob(ENCRYPTED_CAL_DATA), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const tag = combined.slice(12, 28);
+            const ciphertext = combined.slice(28);
+            // GCM expects ciphertext + tag concatenated
+            const ct = new Uint8Array(ciphertext.length + tag.length);
+            ct.set(ciphertext);
+            ct.set(tag, ciphertext.length);
+            const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+            return JSON.parse(new TextDecoder().decode(decrypted));
         }
+
+        let _decryptedCalendars = null;
 
         // CORS proxies to try in order (the iCal URL itself is public but blocked by CORS in browsers)
         const CORS_PROXIES = [
@@ -777,14 +876,7 @@
 
             defaults() {
                 return {
-                    calendars: [
-                        { id: _d('ChQGDB8aCxMJW15XRFRWLQ4BGAoNQlFfXw=='), name: 'Luke', color: '#3B82F6', enabled: true },
-                        { id: _d('DgoeCgQLBggCV0JyUQsABAVCGgwM'), name: 'HK', color: '#EC4899', enabled: true },
-                        { id: _d('EQgBBR8aCxMJW15XRFdRXVksHg4ABV4eUVkL'), name: 'Will', color: '#8B5CF6', enabled: true, icalUrl: _d('DhUZGR9DTE4PU1xXWAIAH0cLFgwGAFceUVkLTg4IABwNBQ1AH1tVBw1CHgUVDxIPWkJXXwgEH1hcSVNEWAJXX1cPDUMKAxRMER5bRlNCA0xdCFpLB1NcUwUEUFMACQhcSQFXDgACAlBfUglfXUFXU0NQUUFfBU8ECh8=') },
-                        { id: _d('EQgBBR8aCxMJW15XRAwTLQ4BGAoNQlFfXw=='), name: 'Will Jr', color: '#10B981', enabled: true },
-                        { id: _d('CAcBNkEUTlFfUANYaSETCAwCUiEAFRlgU1UNBB8aTwoTDh5GQ3JRFA4YGUIPTQINXlVcUgcTQw4DFgQNCRxTXVs='), name: 'Packers \uD83C\uDFC8', color: '#F59E0B', enabled: true },
-                        { id: _d('CAMMNkEUTlEGX1JEaSsIAR4NDAgECRlyR1UNEk4aHBYRFR9yV0BZExFDH0IaAg0JXFRTREgGAgYLFQZPD11d'), name: 'Bucks \uD83E\uDD8C', color: '#06B6D4', enabled: true }
-                    ],
+                    calendars: _decryptedCalendars || [],
                     weatherCity: 'Milwaukee',
                     weatherCoords: null,
                     theme: 'light',
@@ -2179,7 +2271,49 @@
             }
         }
 
-        window.CAL = new FamilyCalendar();
+        // PIN logic
+        window._tryPin = async function() {
+            const input = document.getElementById('pinInput');
+            const errorEl = document.getElementById('pinError');
+            const pin = input.value.trim();
+            if (!pin) { input.focus(); return; }
+
+            try {
+                _decryptedCalendars = await _decryptCalData(pin);
+                // Success — store PIN in localStorage so they don't have to re-enter
+                localStorage.setItem('familyCalPIN', pin);
+                document.getElementById('pinOverlay').classList.add('hidden');
+                document.getElementById('app').style.display = '';
+                window.CAL = new FamilyCalendar();
+            } catch (e) {
+                input.classList.add('error');
+                errorEl.textContent = 'Wrong PIN — try again';
+                setTimeout(() => input.classList.remove('error'), 400);
+                input.value = '';
+                input.focus();
+            }
+        };
+
+        // Allow Enter key to submit PIN
+        document.getElementById('pinInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') window._tryPin();
+        });
+
+        // Auto-unlock if PIN is saved in localStorage
+        (async () => {
+            const savedPin = localStorage.getItem('familyCalPIN');
+            if (savedPin) {
+                try {
+                    _decryptedCalendars = await _decryptCalData(savedPin);
+                    document.getElementById('pinOverlay').classList.add('hidden');
+                    document.getElementById('app').style.display = '';
+                    window.CAL = new FamilyCalendar();
+                } catch (e) {
+                    // Saved PIN is wrong (maybe data changed) — show PIN screen
+                    localStorage.removeItem('familyCalPIN');
+                }
+            }
+        })();
     })();
     </script>
 </body>
