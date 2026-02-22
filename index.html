@@ -1500,6 +1500,25 @@
                     });
                     setInterval(playKeepAlive, 30000);
                 } catch (e) {}
+
+                // Method 3: Simulate user activity — move a hidden element to prevent idle detection
+                try {
+                    const dot = document.createElement('div');
+                    dot.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;';
+                    document.body.appendChild(dot);
+                    setInterval(() => {
+                        dot.style.top = (Math.random() * 2) + 'px';
+                        // Trigger a tiny scroll to simulate activity
+                        window.scrollTo(0, 0);
+                        // Re-request wake lock if lost
+                        if ('wakeLock' in navigator && (!this.wakeLock || this.wakeLock.released)) {
+                            navigator.wakeLock.request('screen').then(wl => this.wakeLock = wl).catch(() => {});
+                        }
+                    }, 60000);
+                } catch (e) {}
+
+                // Method 4: Full page reload every 4 hours to stay fresh and re-engage keep-alive
+                setTimeout(() => { location.reload(); }, 4 * 60 * 60 * 1000);
             }
 
             startAutoRefresh() {
