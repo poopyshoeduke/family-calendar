@@ -603,7 +603,14 @@
             loadConfig() {
                 try {
                     const s = localStorage.getItem('familyCalV4');
-                    if (s) return { ...this.defaults(), ...JSON.parse(s) };
+                    if (s) {
+                        const saved = { ...this.defaults(), ...JSON.parse(s) };
+                        // If no calendars configured, use defaults
+                        if (!saved.calendars || !saved.calendars.length) {
+                            saved.calendars = this.defaults().calendars;
+                        }
+                        return saved;
+                    }
                 } catch (e) {}
                 return this.defaults();
             }
