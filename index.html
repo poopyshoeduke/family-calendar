@@ -314,9 +314,10 @@
             font-size: 0.72rem; line-height: 1.25; cursor: default;
             transition: transform 0.15s, box-shadow 0.15s;
             position: absolute; left: 4px; right: 4px; z-index: 1;
-            padding: 3px 6px; overflow: visible;
+            padding: 3px 6px; overflow: hidden;
             min-height: 22px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            box-sizing: border-box;
         }
         [data-theme="dark"] .event-card { background: color-mix(in srgb, var(--event-color, var(--today-bg)) 20%, var(--bg-card)); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .event-card:hover { transform: scale(1.03); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
@@ -329,7 +330,7 @@
         }
         .event-time-label { font-size: 0.62rem; font-weight: 700; color: var(--event-color, var(--today-bg)); text-transform: uppercase; letter-spacing: 0.02em; }
         .event-card.all-day .event-time-label { color: rgba(255,255,255,0.85); }
-        .event-title { font-weight: 600; color: var(--text); word-break: break-word; }
+        .event-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-card.all-day .event-title { color: white; }
         .event-location { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-cal-name { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; opacity: 0.7; }
@@ -748,10 +749,13 @@
                             for (const def of this.defaults().calendars) {
                                 if (!existingIds.has(def.id)) {
                                     saved.calendars.push(def);
-                                } else if (def.icalUrl) {
-                                    // Apply private URL from defaults if saved entry doesn't have one
+                                } else {
+                                    // Sync color and icalUrl from defaults
                                     const existing = saved.calendars.find(c => c.id === def.id);
-                                    if (existing && !existing.icalUrl) existing.icalUrl = def.icalUrl;
+                                    if (existing) {
+                                        existing.color = def.color;
+                                        if (def.icalUrl && !existing.icalUrl) existing.icalUrl = def.icalUrl;
+                                    }
                                 }
                             }
                         }
@@ -766,10 +770,10 @@
                     calendars: [
                         { id: 'lukeschreiner27@gmail.com', name: 'Luke', color: '#3B82F6', enabled: true },
                         { id: 'hkschreiner@gmail.com', name: 'HK', color: '#EC4899', enabled: true },
-                        { id: 'willschreiner1000@gmail.com', name: 'Will', color: '#F59E0B', enabled: true, icalUrl: 'https://calendar.google.com/calendar/ical/willschreiner1000%40gmail.com/private-0a62d20a56f5ada00b6b220f93d61842/basic.ics' },
-                        { id: 'willschreinerjr@gmail.com', name: 'Will Jr', color: '#06B6D4', enabled: true },
-                        { id: 'nfl_-m-03b3j_Green+Bay+Packers#sports@group.v.calendar.google.com', name: 'Packers 🏈', color: '#10B981', enabled: true },
-                        { id: 'nba_-m-0jmbv_Milwaukee+Bucks#sports@group.v.calendar.google.com', name: 'Bucks 🦌', color: '#8B5CF6', enabled: true }
+                        { id: 'willschreiner1000@gmail.com', name: 'Will', color: '#8B5CF6', enabled: true, icalUrl: 'https://calendar.google.com/calendar/ical/willschreiner1000%40gmail.com/private-0a62d20a56f5ada00b6b220f93d61842/basic.ics' },
+                        { id: 'willschreinerjr@gmail.com', name: 'Will Jr', color: '#10B981', enabled: true },
+                        { id: 'nfl_-m-03b3j_Green+Bay+Packers#sports@group.v.calendar.google.com', name: 'Packers 🏈', color: '#F59E0B', enabled: true },
+                        { id: 'nba_-m-0jmbv_Milwaukee+Bucks#sports@group.v.calendar.google.com', name: 'Bucks 🦌', color: '#06B6D4', enabled: true }
                     ],
                     weatherCity: 'Milwaukee',
                     weatherCoords: null,
@@ -1502,6 +1506,55 @@
                 }
             }
 
+            /* ── Overlap Layout Helper ── */
+            layoutTimedEvents(events) {
+                if (!events.length) return [];
+                const items = events.map(ev => {
+                    const s = new Date(ev.start);
+                    const e = ev.end ? new Date(ev.end) : new Date(s.getTime() + 3600000);
+                    const startH = s.getHours() + s.getMinutes() / 60;
+                    const endH = Math.max(e.getHours() + e.getMinutes() / 60, startH + 0.25);
+                    return { ev, startH, endH, col: 0, totalCols: 1 };
+                }).sort((a, b) => a.startH - b.startH || (b.endH - b.startH) - (a.endH - a.startH));
+                // Build clusters of overlapping events
+                const clusters = [];
+                let cluster = [items[0]];
+                let clusterEnd = items[0].endH;
+                for (let i = 1; i < items.length; i++) {
+                    if (items[i].startH < clusterEnd) {
+                        cluster.push(items[i]);
+                        clusterEnd = Math.max(clusterEnd, items[i].endH);
+                    } else {
+                        clusters.push(cluster);
+                        cluster = [items[i]];
+                        clusterEnd = items[i].endH;
+                    }
+                }
+                clusters.push(cluster);
+                // For each cluster, assign columns
+                clusters.forEach(cl => {
+                    const cols = []; // tracks end time per column
+                    cl.forEach(item => {
+                        let placed = false;
+                        for (let c = 0; c < cols.length; c++) {
+                            if (item.startH >= cols[c]) {
+                                cols[c] = item.endH;
+                                item.col = c;
+                                placed = true;
+                                break;
+                            }
+                        }
+                        if (!placed) {
+                            item.col = cols.length;
+                            cols.push(item.endH);
+                        }
+                    });
+                    const total = cols.length;
+                    cl.forEach(item => item.totalCols = total);
+                });
+                return items;
+            }
+
             /* ── Render Events ── */
             renderEvents() {
                 const DAY_START = 6;  // 6 AM
@@ -1587,13 +1640,14 @@
                         allDayBox.appendChild(card);
                     });
 
-                    timed.forEach(ev => {
+                    const layoutItems = this.layoutTimedEvents(timed);
+                    const isDayV = this.viewMode === 'day';
+                    layoutItems.forEach(item => {
+                        const ev = item.ev;
                         const s = new Date(ev.start);
                         const e = ev.end ? new Date(ev.end) : new Date(s.getTime() + 3600000);
-                        const startH = s.getHours() + s.getMinutes() / 60;
-                        const endH = e.getHours() + e.getMinutes() / 60;
-                        const clampStart = Math.max(startH, DAY_START);
-                        const clampEnd = Math.min(endH, DAY_END);
+                        const clampStart = Math.max(item.startH, DAY_START);
+                        const clampEnd = Math.min(item.endH, DAY_END);
                         const topPct = ((clampStart - DAY_START) / TOTAL_HOURS) * 100;
                         const heightPct = Math.max(((clampEnd - clampStart) / TOTAL_HOURS) * 100, 2.5);
 
@@ -1602,8 +1656,23 @@
                         card.style.setProperty('--event-color', ev.calColor);
                         card.style.top = topPct + '%';
                         card.style.height = heightPct + '%';
+
+                        // Position overlapping events side-by-side
+                        if (item.totalCols > 1) {
+                            const colFrac = item.col / item.totalCols;
+                            const widthFrac = 1 / item.totalCols;
+                            if (isDayV) {
+                                card.style.left = `calc(70px + (100% - 86px) * ${colFrac})`;
+                                card.style.width = `calc((100% - 86px) * ${widthFrac} - 2px)`;
+                            } else {
+                                card.style.left = `calc(100% * ${colFrac} + 2px)`;
+                                card.style.width = `calc(100% * ${widthFrac} - 4px)`;
+                            }
+                            card.style.right = 'auto';
+                        }
+
                         // Show more detail in day view: time range + location
-                        if (this.viewMode === 'day') {
+                        if (isDayV) {
                             const timeRange = `${this.formatTime(s)} – ${this.formatTime(e)}`;
                             const locHtml = ev.location ? `<div class="event-location">${this.escHtml(ev.location)}</div>` : '';
                             const calHtml = `<div class="event-cal-name">${this.escHtml(ev.calName)}</div>`;
