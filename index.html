@@ -202,18 +202,46 @@
 
         /* ── DAY VIEW ── */
         .view-day .day-column {
-            border-radius: var(--radius);
+            border-radius: var(--radius); overflow: visible;
         }
         .view-day .day-header {
-            padding: 12px 20px; display: flex; align-items: center; justify-content: center; gap: 16px;
+            padding: 14px 24px; display: flex; align-items: center; justify-content: center; gap: 16px;
+            border-bottom: 2px solid var(--border-light);
         }
-        .view-day .day-name { font-size: 1rem; margin-bottom: 0; }
-        .view-day .day-number { font-size: 2.4rem; }
-        .view-day .event-card { font-size: 0.9rem; padding: 6px 12px; left: 40px; right: 12px; border-left-width: 4px; }
-        .view-day .event-time-label { font-size: 0.78rem; }
-        .view-day .event-card.all-day { font-size: 0.9rem; padding: 8px 12px; }
-        .view-day .hour-label { font-size: 0.65rem; left: 8px; }
-        .view-day .hour-marker { left: 36px; }
+        .view-day .day-name { font-size: 1.1rem; margin-bottom: 0; font-weight: 700; letter-spacing: 0.05em; }
+        .view-day .day-number { font-size: 2.6rem; }
+        .view-day .day-events { overflow-y: auto; }
+        .view-day .day-events-allday {
+            display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 8px 70px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .view-day .day-events-timed {
+            min-height: 800px;
+        }
+        .view-day .event-card {
+            font-size: 0.92rem; padding: 8px 14px; left: 70px; right: 16px;
+            border-left-width: 4px; border-radius: 8px; min-height: 28px;
+        }
+        .view-day .event-time-label { font-size: 0.8rem; margin-bottom: 2px; }
+        .view-day .event-title { font-size: 0.92rem; }
+        .view-day .event-card.all-day {
+            font-size: 0.92rem; padding: 10px 16px; position: relative;
+            left: auto; right: auto; border-left: none; max-width: 280px;
+        }
+        .view-day .hour-label {
+            font-size: 0.72rem; left: 12px; font-weight: 600; opacity: 0.7;
+            width: 48px; text-align: right;
+        }
+        .view-day .hour-marker { left: 66px; }
+        .view-day .now-line {
+            position: absolute; left: 60px; right: 0; height: 2px;
+            background: #ef4444; z-index: 5; pointer-events: none;
+        }
+        .view-day .now-dot {
+            position: absolute; left: 54px; width: 12px; height: 12px;
+            background: #ef4444; border-radius: 50%; z-index: 5;
+            transform: translateY(-5px); pointer-events: none;
+        }
 
         /* ── MONTH VIEW ── */
         .month-header-row {
@@ -303,6 +331,10 @@
         .event-card.all-day .event-time-label { color: rgba(255,255,255,0.85); }
         .event-title { font-weight: 600; color: var(--text); word-break: break-word; }
         .event-card.all-day .event-title { color: white; }
+        .event-location { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .event-cal-name { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; opacity: 0.7; }
+        .view-day .event-location { font-size: 0.78rem; }
+        .view-day .event-cal-name { font-size: 0.72rem; }
 
         /* ── OVERLAY ── */
         .overlay {
@@ -731,7 +763,7 @@
                     calendars: [
                         { id: 'lukeschreiner27@gmail.com', name: 'Luke', color: '#3B82F6', enabled: true },
                         { id: 'hkschreiner@gmail.com', name: 'HK', color: '#EC4899', enabled: true },
-                        { id: 'willschreiner1000@gmail.com', name: 'Will', color: '#F59E0B', enabled: true },
+                        { id: 'willschreiner1000@gmail.com', name: 'Will', color: '#F59E0B', enabled: true, icalUrl: 'https://calendar.google.com/calendar/ical/willschreiner1000%40gmail.com/private-0a62d20a56f5ada00b6b220f93d61842/basic.ics' },
                         { id: 'willschreinerjr@gmail.com', name: 'Will Jr', color: '#06B6D4', enabled: true },
                         { id: 'nfl_-m-03b3j_Green+Bay+Packers#sports@group.v.calendar.google.com', name: 'Packers 🏈', color: '#10B981', enabled: true },
                         { id: 'nba_-m-0jmbv_Milwaukee+Bucks#sports@group.v.calendar.google.com', name: 'Bucks 🦌', color: '#8B5CF6', enabled: true }
@@ -1497,8 +1529,11 @@
                     allDayBox.innerHTML = '';
                     timedBox.innerHTML = '';
 
-                    // Add faint hour markers
-                    const markerHours = [8, 10, 12, 14, 16, 18, 20];
+                    // Add hour markers — every hour in day view, every 2h in week view
+                    const isDayView = this.viewMode === 'day';
+                    const markerHours = isDayView
+                        ? Array.from({length: DAY_END - DAY_START}, (_, i) => DAY_START + i)
+                        : [8, 10, 12, 14, 16, 18, 20];
                     markerHours.forEach(h => {
                         const pct = ((h - DAY_START) / TOTAL_HOURS) * 100;
                         const marker = document.createElement('div');
@@ -1508,10 +1543,30 @@
                         const label = document.createElement('div');
                         label.className = 'hour-label';
                         label.style.top = pct + '%';
-                        const displayH = h > 12 ? (h - 12) : h;
+                        const displayH = h > 12 ? (h - 12) : (h === 0 ? 12 : h);
                         label.textContent = displayH + (h >= 12 ? 'p' : 'a');
                         timedBox.appendChild(label);
                     });
+
+                    // Current time indicator (day view)
+                    if (isDayView) {
+                        const now = new Date();
+                        const nowStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                        if (date === nowStr) {
+                            const nowH = now.getHours() + now.getMinutes() / 60;
+                            if (nowH >= DAY_START && nowH <= DAY_END) {
+                                const nowPct = ((nowH - DAY_START) / TOTAL_HOURS) * 100;
+                                const nowLine = document.createElement('div');
+                                nowLine.className = 'now-line';
+                                nowLine.style.top = nowPct + '%';
+                                timedBox.appendChild(nowLine);
+                                const nowDot = document.createElement('div');
+                                nowDot.className = 'now-dot';
+                                nowDot.style.top = nowPct + '%';
+                                timedBox.appendChild(nowDot);
+                            }
+                        }
+                    }
 
                     const allDay = evs.filter(e => e.allDay);
                     const timed = evs.filter(e => !e.allDay).sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -1544,7 +1599,15 @@
                         card.style.setProperty('--event-color', ev.calColor);
                         card.style.top = topPct + '%';
                         card.style.height = heightPct + '%';
-                        card.innerHTML = `<div class="event-time-label">${this.formatTime(s)}</div><div class="event-title">${this.escHtml(ev.title)}</div>`;
+                        // Show more detail in day view: time range + location
+                        if (this.viewMode === 'day') {
+                            const timeRange = `${this.formatTime(s)} – ${this.formatTime(e)}`;
+                            const locHtml = ev.location ? `<div class="event-location">${this.escHtml(ev.location)}</div>` : '';
+                            const calHtml = `<div class="event-cal-name">${this.escHtml(ev.calName)}</div>`;
+                            card.innerHTML = `<div class="event-time-label">${timeRange}</div><div class="event-title">${this.escHtml(ev.title)}</div>${locHtml}${calHtml}`;
+                        } else {
+                            card.innerHTML = `<div class="event-time-label">${this.formatTime(s)}</div><div class="event-title">${this.escHtml(ev.title)}</div>`;
+                        }
                         timedBox.appendChild(card);
                     });
                 });
