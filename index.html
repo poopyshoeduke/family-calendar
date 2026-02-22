@@ -314,7 +314,7 @@
             font-size: 0.6rem; line-height: 1.2; cursor: default;
             transition: transform 0.15s, box-shadow 0.15s;
             position: absolute; left: 4px; right: 4px; z-index: 1;
-            padding: 2px 4px; overflow: hidden;
+            padding: 2px 4px; overflow: visible;
             min-height: 22px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.06);
             box-sizing: border-box;
@@ -331,8 +331,7 @@
         .event-time-label { font-size: 0.5rem; font-weight: 700; color: var(--event-color, var(--today-bg)); text-transform: uppercase; letter-spacing: 0.02em; }
         .view-day .event-time-label { font-size: 0.8rem; }
         .event-card.all-day .event-time-label { color: rgba(255,255,255,0.85); }
-        .event-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .view-day .event-title { white-space: normal; word-break: break-word; overflow: visible; text-overflow: unset; }
+        .event-title { font-weight: 600; color: var(--text); word-break: break-word; }
         .event-card.all-day .event-title { color: white; }
         .event-location { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .event-cal-name { font-size: 0.62rem; color: var(--text-muted); margin-top: 1px; opacity: 0.7; }
@@ -1658,7 +1657,7 @@
                         card.className = 'event-card';
                         card.style.setProperty('--event-color', ev.calColor);
                         card.style.top = topPct + '%';
-                        card.style.height = heightPct + '%';
+                        card.style.minHeight = heightPct + '%';
 
                         // Position overlapping events side-by-side
                         if (item.totalCols > 1) {
