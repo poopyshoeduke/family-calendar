@@ -612,6 +612,61 @@
             20%,60% { transform: translateX(-8px); }
             40%,80% { transform: translateX(8px); }
         }
+
+        /* ── iOS Fullscreen Prompt ── */
+        .ios-prompt-overlay {
+            position: fixed; inset: 0; z-index: 99998;
+            background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.25s;
+        }
+        .ios-prompt-box {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 32px 28px;
+            text-align: center;
+            max-width: 340px;
+            width: 90%;
+        }
+        .ios-prompt-box h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0 0 12px;
+            color: var(--text);
+        }
+        .ios-prompt-box p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0 0 8px;
+            line-height: 1.5;
+        }
+        .ios-prompt-box .ios-steps {
+            text-align: left;
+            margin: 16px 0;
+            font-size: 0.85rem;
+            color: var(--text);
+            line-height: 1.8;
+        }
+        .ios-prompt-box .ios-steps span {
+            font-size: 1.1rem;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        .ios-prompt-dismiss {
+            margin-top: 12px;
+            padding: 10px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            border: none;
+            border-radius: 10px;
+            background: var(--today-bg);
+            color: #fff;
+            cursor: pointer;
+        }
+        .ios-prompt-dismiss:hover { opacity: 0.85; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -2067,6 +2122,21 @@
             }
 
             toggleFullscreen() {
+                // Detect iOS (iPhone/iPad/iPod) — Fullscreen API is not supported
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                if (isIOS) {
+                    // Already in standalone PWA mode — already fullscreen
+                    if (window.navigator.standalone) {
+                        this.showStatus('Already running fullscreen!');
+                        return;
+                    }
+                    // Show Add to Home Screen instructions
+                    this.showIOSFullscreenPrompt();
+                    return;
+                }
+
                 if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                     const el = document.documentElement;
                     if (el.requestFullscreen) el.requestFullscreen();
@@ -2079,6 +2149,28 @@
                     else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
                     else if (document.msExitFullscreen) document.msExitFullscreen();
                 }
+            }
+
+            showIOSFullscreenPrompt() {
+                // Remove existing prompt if any
+                document.querySelector('.ios-prompt-overlay')?.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'ios-prompt-overlay';
+                overlay.innerHTML = `
+                    <div class="ios-prompt-box">
+                        <h3>&#128241; Go Fullscreen on iPhone</h3>
+                        <p>iOS doesn't support in-browser fullscreen, but you can add this as an app:</p>
+                        <div class="ios-steps">
+                            <span>1️⃣</span> Tap the <strong>Share</strong> button <span style="font-size:1.2rem">&#x2191;&#xFE0E;</span> at the bottom of Safari<br>
+                            <span>2️⃣</span> Scroll down and tap <strong>"Add to Home Screen"</strong><br>
+                            <span>3️⃣</span> Tap <strong>"Add"</strong> — opens as a fullscreen app!
+                        </div>
+                        <button class="ios-prompt-dismiss" onclick="this.closest('.ios-prompt-overlay').remove()">Got it</button>
+                    </div>
+                `;
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+                document.body.appendChild(overlay);
             }
 
             updateClock() {
