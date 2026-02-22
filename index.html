@@ -286,7 +286,7 @@
             padding: 0 4px; flex-shrink: 0;
         }
         .day-events {
-            flex: 1; position: relative; padding: 0; overflow: hidden;
+            flex: 1; position: relative; padding: 0; overflow-y: auto; overflow-x: hidden;
         }
         .day-events-allday {
             display: flex; flex-direction: column; gap: 3px; padding: 5px 5px 2px;
@@ -314,8 +314,8 @@
             font-size: 0.72rem; line-height: 1.25; cursor: default;
             transition: transform 0.15s, box-shadow 0.15s;
             position: absolute; left: 4px; right: 4px; z-index: 1;
-            padding: 3px 6px; overflow: hidden;
-            min-height: 16px;
+            padding: 3px 6px; overflow: visible;
+            min-height: 22px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
         [data-theme="dark"] .event-card { background: color-mix(in srgb, var(--event-color, var(--today-bg)) 20%, var(--bg-card)); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
